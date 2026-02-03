@@ -135,26 +135,112 @@ LXR-Drugs is a comprehensive drug consumption system designed specifically for R
    - Set your framework (or use 'auto')
    - Customize drug items, effects, and durations
 
-4. **Add items to your database**
+4. **Add items to your framework**
    
    **For LXR-Core / RSG-Core:**
-   ```sql
-   -- Add to items table
-   INSERT INTO `items` (`name`, `label`, `weight`, `type`, `image`, `unique`, `useable`, `shouldClose`, `combinable`, `description`) VALUES
-   ('joint', 'Joint', 0.1, 'item', 'joint.png', 0, 1, 1, NULL, 'A rolled cannabis cigarette'),
-   ('opium', 'Opium', 0.2, 'item', 'opium.png', 0, 1, 1, NULL, 'Raw opium for smoking'),
-   ('pipe', 'Pipe', 0.3, 'item', 'pipe.png', 0, 0, 0, NULL, 'A smoking pipe'),
-   ('mushroom', 'Magic Mushroom', 0.1, 'item', 'mushroom.png', 0, 1, 1, NULL, 'A psychedelic mushroom');
+   
+   Add these items to `[framework]/shared/items.lua`:
+   ```lua
+   -- Joint (Cannabis)
+   joint = {
+       name = 'joint',
+       label = 'Joint',
+       weight = 10,
+       type = 'item',
+       image = 'joint.png',
+       unique = false,
+       useable = true,
+       shouldClose = true,
+       combinable = nil,
+       description = 'A rolled cannabis cigarette'
+   },
+
+   -- Opium
+   opium = {
+       name = 'opium',
+       label = 'Opium',
+       weight = 50,
+       type = 'item',
+       image = 'opium.png',
+       unique = false,
+       useable = true,
+       shouldClose = true,
+       combinable = nil,
+       description = 'Raw opium resin, requires a pipe'
+   },
+
+   -- Pipe (Required for Opium)
+   pipe = {
+       name = 'pipe',
+       label = 'Smoking Pipe',
+       weight = 100,
+       type = 'item',
+       image = 'pipe.png',
+       unique = false,
+       useable = false,
+       shouldClose = true,
+       combinable = nil,
+       description = 'A wooden smoking pipe'
+   },
+
+   -- Mushroom (Psychedelic)
+   mushroom = {
+       name = 'mushroom',
+       label = 'Strange Mushroom',
+       weight = 20,
+       type = 'item',
+       image = 'mushroom.png',
+       unique = false,
+       useable = true,
+       shouldClose = true,
+       combinable = nil,
+       description = 'A peculiar looking mushroom with psychedelic properties'
+   },
    ```
 
    **For VORP:**
-   ```sql
-   -- Add to items table
-   INSERT INTO `items` (`item`, `label`, `limit`, `can_remove`, `type`, `usable`) VALUES
-   ('joint', 'Joint', 10, 1, 'item_standard', 1),
-   ('opium', 'Opium', 5, 1, 'item_standard', 1),
-   ('pipe', 'Pipe', 1, 1, 'item_standard', 0),
-   ('mushroom', 'Magic Mushroom', 5, 1, 'item_standard', 1);
+   
+   Add these items to `vorp_inventory/shared/items.lua`:
+   ```lua
+   -- Joint
+   ['joint'] = {
+       label = 'Joint',
+       weight = 0.01,
+       canBeDropped = true,
+       canBeUsed = true,
+       limit = 10,
+       desc = 'A rolled cannabis cigarette'
+   },
+
+   -- Opium
+   ['opium'] = {
+       label = 'Opium',
+       weight = 0.05,
+       canBeDropped = true,
+       canBeUsed = true,
+       limit = 5,
+       desc = 'Raw opium resin, requires a pipe'
+   },
+
+   -- Pipe
+   ['pipe'] = {
+       label = 'Smoking Pipe',
+       weight = 0.10,
+       canBeDropped = true,
+       canBeUsed = false,
+       limit = 1,
+       desc = 'A wooden smoking pipe'
+   },
+
+   -- Mushroom
+   ['mushroom'] = {
+       label = 'Strange Mushroom',
+       weight = 0.02,
+       canBeDropped = true,
+       canBeUsed = true,
+       limit = 10,
+       desc = 'A peculiar looking mushroom with psychedelic properties'
+   },
    ```
 
 5. **Restart your server**
