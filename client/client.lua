@@ -1,6 +1,32 @@
+--[[
+    ██╗     ██╗  ██╗██████╗       ██████╗ ██████╗ ██╗   ██╗ ██████╗ ███████╗
+    ██║     ╚██╗██╔╝██╔══██╗      ██╔══██╗██╔══██╗██║   ██║██╔════╝ ██╔════╝
+    ██║      ╚███╔╝ ██████╔╝█████╗██║  ██║██████╔╝██║   ██║██║  ███╗███████╗
+    ██║      ██╔██╗ ██╔══██╗╚════╝██║  ██║██╔══██╗██║   ██║██║   ██║╚════██║
+    ███████╗██╔╝ ██╗██║  ██║      ██████╔╝██║  ██║╚██████╔╝╚██████╔╝███████║
+    ╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝      ╚═════╝ ╚═╝  ╚═╝ ╚═════╝  ╚═════╝ ╚══════╝
+                                                                              
+    🐺 LXR Drugs - Client Script
+    
+    This client script handles drug consumption animations and visual effects.
+    It manages animations, props, screen effects, hallucination peds, and camera
+    manipulation for an immersive drug experience in RedM.
+    
+    ═══════════════════════════════════════════════════════════════════════════════
+    
+    © 2026 iBoss21 / The Lux Empire | wolves.land | All Rights Reserved
+]]
+
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 🐺 LOCAL VARIABLES & STATE MANAGEMENT
+-- ═══════════════════════════════════════════════════════════════════════════════
+
 local peds = {}
 
---########################### LOAD MODEL ###########################
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 🐺 UTILITY FUNCTIONS - MODEL & ANIMATION LOADING
+-- ═══════════════════════════════════════════════════════════════════════════════
+
 function LoadModel(model)
     local modelHash = GetHashKey(model)
     RequestModel(modelHash)
@@ -9,7 +35,6 @@ function LoadModel(model)
     end
 end
 
---########################### ANIM ###########################
 function Anim(actor, dict, body, duration, flags, introtiming, exittiming)
 	RequestAnimDict(dict)
 	local dur = duration or -1
@@ -24,21 +49,26 @@ function Anim(actor, dict, body, duration, flags, introtiming, exittiming)
 	TaskPlayAnim(actor, dict, body, intro, exit, dur, flag, 1, false, false, false, 0, true)
 end
 
---########################### JOINT ###########################
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 🐺 JOINT SYSTEM - CIGARETTE SMOKING EFFECTS
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- Joint usage tracking for limit enforcement
 local joints = 0
 
+-- Joint limit reset timer thread
 Citizen.CreateThread(function()         
     while true do
 		if joints > 0 then
-			Wait(Config.JointTimeLimit)
+			Wait(Config.Joint.timeLimitMs)
 			joints = 0
 		end
 		Citizen.Wait(1000)
 	end
 end)
 
-RegisterNetEvent('xakra_drugs:JointAnim')
-AddEventHandler('xakra_drugs:JointAnim', function()
+-- Joint animation and effects handler
+RegisterNetEvent('lxr-drugs:client:joint')
+AddEventHandler('lxr-drugs:client:joint', function()
 	local cigarette = CreateObject(GetHashKey('p_cigarette_dynamic_01x'), GetEntityCoords(PlayerPedId()), true, true, true)
     local righthand = GetEntityBoneIndexByName(PlayerPedId(), "SKEL_R_Finger13")
     local mouth = GetEntityBoneIndexByName(PlayerPedId(), "skel_head")
@@ -63,22 +93,24 @@ AddEventHandler('xakra_drugs:JointAnim', function()
 	Wait(1500)
 	ClearPedTasks(PlayerPedId())
 
-	if joints < Config.JointLimit then
+	-- Check if under limit for normal effects or overdose
+	if joints < Config.Joint.limit then
 		joints = joints + 1
 
-		Citizen.InvokeNative(0x406CCF555B04FAD3, PlayerPedId(), true, 0.5) -- SetPedDrunkness
+		Citizen.InvokeNative(0x406CCF555B04FAD3, PlayerPedId(), true, Config.Joint.drunkLevel) -- SetPedDrunkness
 		AnimpostfxPlay('PlayerDrugsPoisonWell')
 		
 		Citizen.InvokeNative(0xC6258F41D86676E0, PlayerPedId(), 0, 100)	-- SetAttributeCoreValue
 		Citizen.InvokeNative(0x4AF5A4C7B9157D14, PlayerPedId(), 0, 1000.0, true)	-- EnableAttributeCoreOverpower
 
-		Wait(Config.JointEffect)
+		Wait(Config.Joint.effectDurationMs)
 		AnimpostfxPlay('CamTransitionBlinkSlow')
 		AnimpostfxStop('PlayerDrugsPoisonWell')
 		Citizen.InvokeNative(0x406CCF555B04FAD3, PlayerPedId(), false, 0.0)	-- SetPedDrunkness
 	else
+		-- Overdose effects: hallucinations and ragdoll
 		Wait(5000)
-		local time = Config.JointEffect + 10000
+		local time = Config.Joint.effectDurationMs + 10000
 		AnimpostfxPlay('playerdrugshalluc01')
 		SetPedToRagdoll(PlayerPedId(), 1000, 1000, 0, 0, 0, 0) 
 		while time > 0 do 
@@ -92,9 +124,13 @@ AddEventHandler('xakra_drugs:JointAnim', function()
 	end
 end)
 
---########################### OPIUM ###########################
-RegisterNetEvent('xakra_drugs:Opium')
-AddEventHandler('xakra_drugs:Opium', function()
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 🐺 OPIUM SYSTEM - PIPE SMOKING & HALLUCINATIONS
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- Opium pipe smoking animation and hallucination effects
+RegisterNetEvent('lxr-drugs:client:opium')
+AddEventHandler('lxr-drugs:client:opium', function()
 	local pipe = CreateObject(GetHashKey('P_PIPE01X'), GetEntityCoords(PlayerPedId()), true, true, true)
     local righthand = GetEntityBoneIndexByName(PlayerPedId(), "SKEL_R_Finger13")
     AttachEntityToEntity(pipe, PlayerPedId(), righthand, 0.005, -0.045, 0.0, -170.0, 10.0, -15.0, true, true, false, true, 1, true)
@@ -112,13 +148,15 @@ AddEventHandler('xakra_drugs:Opium', function()
 	Citizen.InvokeNative(0xC6258F41D86676E0, PlayerPedId(), 0, 100)	-- SetAttributeCoreValue
 	Citizen.InvokeNative(0x4AF5A4C7B9157D14, PlayerPedId(), 0, 1000.0, true)	-- EnableAttributeCoreOverpower
 
-	for i = 0, Config.OpiumpQuantityPeds do
-		local model = Config.OpiumpPeds[math.random(#Config.OpiumpPeds)]
+	-- Spawn hallucination peds from opium effects
+	for i = 0, Config.Opium.pedQuantity do
+		local model = Config.Opium.pedModels[math.random(#Config.Opium.pedModels)]
 		CreateOpiumPed(model)
 	end
 
-	Wait(Config.OpiumEffect)
+	Wait(Config.Opium.effectDurationMs)
 
+	-- Clean up hallucination peds
 	for _, ped in pairs(peds) do
 		DeleteEntity(ped)
 	end
@@ -128,12 +166,13 @@ AddEventHandler('xakra_drugs:Opium', function()
 	Citizen.InvokeNative(0x406CCF555B04FAD3, PlayerPedId(), false, 0.0) -- SetPedDrunkness
 end)
 
+-- Create opium hallucination ped at random location near player
 function CreateOpiumPed(model)
 
     local pcoords = GetEntityCoords(PlayerPedId())
 
-	local x = pcoords.x + math.random(-20, 20)
-	local y = pcoords.y + math.random(-20, 20)
+	local x = pcoords.x + math.random(-Config.Performance.maxPedSpawnDistance, Config.Performance.maxPedSpawnDistance)
+	local y = pcoords.y + math.random(-Config.Performance.maxPedSpawnDistance, Config.Performance.maxPedSpawnDistance)
 	local _,z = GetGroundZAndNormalFor_3dCoord(x, y, pcoords.z + 999)
 	local coords = vector4(x, y, z, math.random(360) + 0.0)
 
@@ -142,11 +181,16 @@ function CreateOpiumPed(model)
     Citizen.InvokeNative(0x283978A15512B2FE, ped, true)  -- SetRandomOutfitVariation
 	table.insert(peds, ped)
     SetModelAsNoLongerNeeded(model)
-	SetPedScale(ped, 5.0)
+	SetPedScale(ped, Config.Performance.pedScaleLarge)
 end
 
---########################### MUSHROOM ###########################
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 🐺 MUSHROOM SYSTEM - PSYCHEDELIC EFFECTS & SKY CAMERA
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- Camera and mushroom prop for visual effects
 local cam, mushroom
+
+-- Sky transition effects for psychedelic visuals
 local SkyEffects = {
 	"skytl_0000_01clear",
 	"skytl_0000_03clouds",
@@ -198,8 +242,10 @@ local SkyEffects = {
 	"SkyTL_2100_04Storm_nofade",
 }
 
-RegisterNetEvent('xakra_drugs:Mushroom')
-AddEventHandler('xakra_drugs:Mushroom', function()
+-- Mushroom eating animation and intense psychedelic effects
+RegisterNetEvent('lxr-drugs:client:mushroom')
+AddEventHandler('lxr-drugs:client:mushroom', function()
+	-- Create mushroom prop and attach to player hand
 	mushroom = CreateObject(GetHashKey('s_amedmush'), GetEntityCoords(PlayerPedId()), true, true, true)
     local righthand = GetEntityBoneIndexByName(PlayerPedId(), "SKEL_R_Finger13")
     AttachEntityToEntity(mushroom, PlayerPedId(), righthand, 0.005, -0.045, 0.0, -170.0, 10.0, -15.0, true, true, false, true, 1, true)
@@ -208,10 +254,11 @@ AddEventHandler('xakra_drugs:Mushroom', function()
 	
 	DeleteEntity(mushroom)
 	ClearPedTasks(PlayerPedId())
-	Citizen.InvokeNative(0x406CCF555B04FAD3, PlayerPedId(), true, 1.0)	-- SetPedDrunkness
+	Citizen.InvokeNative(0x406CCF555B04FAD3, PlayerPedId(), true, Config.Mushroom.drunkLevel)	-- SetPedDrunkness
 	AnimpostfxPlay('PlayerRPGCore')
 	Wait(10000)
 
+	-- Camera pitch manipulation for disorientation effect
 	Citizen.InvokeNative(0x449995EA846D3FC2, -90.0)	-- SetGameplayCamInitialPitch
 	Anim(PlayerPedId(), "veh_train@trolly@exterior@rl@exit@to@land@normal@get_out_start@male","dead_fall_out", -1, 2)
 	Wait(10000)
@@ -219,7 +266,7 @@ AddEventHandler('xakra_drugs:Mushroom', function()
 	Citizen.InvokeNative(0x449995EA846D3FC2, -90.0)	-- SetGameplayCamInitialPitch
 	Wait(500)
 	local pcoords = GetEntityCoords(PlayerPedId())
-	local coords = vector3(pcoords.x, pcoords.y, pcoords.z + 100)
+	local coords = vector3(pcoords.x, pcoords.y, pcoords.z + Config.Performance.cameraHeight)
 	cam = CreateCamWithParams('DEFAULT_SCRIPTED_CAMERA', coords, -90.0, 0.0, 0.0, 60.00, false, 0)
 	SetCamActive(cam, true)
 	RenderScriptCams(true, true, 15000, 1, 0)
@@ -228,6 +275,7 @@ AddEventHandler('xakra_drugs:Mushroom', function()
 	AnimpostfxPlay('PlayerWakeUpInterrogation')
 	Wait(2000)
 
+	-- Random sky effect for psychedelic visual distortion
 	local animpostfx = SkyEffects[math.random(#SkyEffects)]
 	AnimpostfxPlay(animpostfx)
 	Wait(20000)
@@ -236,11 +284,13 @@ AddEventHandler('xakra_drugs:Mushroom', function()
 	AnimpostfxStop(animpostfx)
 	Wait(10000)
 
-	for i = 0, Config.MushroomQuantityPeds do
-		local model = Config.MushroomPeds[math.random(#Config.MushroomPeds)]
+	-- Spawn hallucination peds in the sky
+	for i = 0, Config.Mushroom.pedQuantity do
+		local model = Config.Mushroom.pedModels[math.random(#Config.Mushroom.pedModels)]
 		CreateMushroomPed(model, coords)
 	end
 
+	-- Restore camera and clean up effects
 	if DoesCamExist(cam) then
 		RenderScriptCams(false, true, 10000, 1, 0)
 		DestroyCam(cam, true)
@@ -254,6 +304,7 @@ AddEventHandler('xakra_drugs:Mushroom', function()
 	ClearPedTasks(PlayerPedId())
 	Wait(5000)
 
+	-- Clean up hallucination peds
 	for _, ped in pairs(peds) do
 		DeleteEntity(ped)
 	end
@@ -262,6 +313,7 @@ AddEventHandler('xakra_drugs:Mushroom', function()
 	AnimpostfxStop('PlayerRPGCore')
 end)
 
+-- Create mushroom hallucination ped in the sky
 function CreateMushroomPed(model, coords)
 
 	local x = coords.x + math.random(-10, 10)
@@ -274,34 +326,47 @@ function CreateMushroomPed(model, coords)
     Citizen.InvokeNative(0x283978A15512B2FE, ped, true)  -- SetRandomOutfitVariation
 	table.insert(peds, ped)
     SetModelAsNoLongerNeeded(model)
-	SetPedScale(ped, 2.0)
+	SetPedScale(ped, Config.Performance.pedScaleSmall)
 end
 
 
---########################### STOP RESOURCE ###########################
+-- ═══════════════════════════════════════════════════════════════════════════════
+-- 🐺 RESOURCE CLEANUP - STOP HANDLER
+-- ═══════════════════════════════════════════════════════════════════════════════
+
+-- Clean up all effects, peds, and objects when resource stops
 AddEventHandler('onResourceStop', function (resourceName)
+	-- Stop all active screen effects
 	AnimpostfxStop('PlayerDrugsPoisonWell')
 	AnimpostfxStop('playerdrugshalluc01')
 
+	-- Reset drunkness state
 	Citizen.InvokeNative(0x406CCF555B04FAD3, PlayerPedId(), false, 0.0)	-- SetPedDrunkness
 
+	-- Delete all spawned hallucination peds
 	for _, ped in pairs(peds) do
 		DeleteEntity(ped)
 	end
 
+	-- Clear player animations
 	ClearPedTasks(PlayerPedId())
 
+	-- Delete mushroom prop if exists
 	DeleteEntity(mushroom)
 
+	-- Stop mushroom effects
 	AnimpostfxStop('PlayerRPGCore')
 
+	-- Destroy camera if exists
 	if DoesCamExist(cam) then
 		DestroyCam(cam, true)
 	end
 
+	-- Clear player locomotion
 	Citizen.InvokeNative(0x4FD80C3DD84B817B, PlayerPedId())	-- ClearPedDesiredLocoForModel
 	Citizen.InvokeNative(0x58F7DB5BD8FA2288, PlayerPedId())	-- ClearPedDesiredLocoMotionType
 
+	-- Stop all sky effects
 	for _, animpostfx in pairs(SkyEffects) do
 		AnimpostfxStop(animpostfx)
 	end
