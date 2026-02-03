@@ -13,6 +13,40 @@
     manipulation for an immersive drug experience in RedM.
     
     ═══════════════════════════════════════════════════════════════════════════════
+    SERVER INFORMATION
+    ═══════════════════════════════════════════════════════════════════════════════
+    
+    Server:      The Land of Wolves 🐺
+    Tagline:     Georgian RP 🇬🇪 | მგლების მიწა - რჩეულთა ადგილი!
+    Description: ისტორია ცოცხლდება აქ! (History Lives Here!)
+    Type:        Serious Hardcore Roleplay
+    Access:      Discord & Whitelisted
+    
+    Developer:   iBoss21 / The Lux Empire
+    Website:     https://www.wolves.land
+    Discord:     https://discord.gg/CrKcWdfd3A
+    GitHub:      https://github.com/iBoss21
+    Store:       https://theluxempire.tebex.io
+    Server:      https://servers.redm.net/servers/detail/8gj7eb
+    
+    ═══════════════════════════════════════════════════════════════════════════════
+    
+    Version: 1.0.0
+    Performance Target: Smooth animations, optimized visual effects
+    
+    Tags: RedM, Georgian, SeriousRP, Client, Animations, Effects
+    
+    Framework Support:
+    - LXR Core (Primary)
+    - RSG Core (Primary)
+    - VORP Core (Supported)
+    
+    ═══════════════════════════════════════════════════════════════════════════════
+    CREDITS
+    ═══════════════════════════════════════════════════════════════════════════════
+    
+    Script Author: iBoss21 / The Lux Empire for The Land of Wolves
+    Visual Effects: Hallucinations, screen effects, camera manipulation
     
     © 2026 iBoss21 / The Lux Empire | wolves.land | All Rights Reserved
 ]]
